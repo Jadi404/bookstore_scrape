@@ -3,10 +3,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import pandas as pd
 
-
 BASE_URL = "https://books.toscrape.com/"
 
-#This function collects all the genres on the site then sorts through (strips) the html and returns solely the genre links.
+#Function gets a list of the genre names 
 def get_genres():
     response = requests.get(BASE_URL)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -22,68 +21,62 @@ def get_genres():
 
     return genre_links
 
-#This function counts how many books there are in each genre and returns that number. 
+
+# function counts books in genre and the price
 def count_books_in_genre(url):
     count = 0
-    price = 0 
+    price = 0
 
-    while url:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, "html.parser")
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
 
-        books = soup.select("article.product_pod")
-        count += len(books)
-        for book in books:
-            price_text = book.select_one(".price_color").text
-            clean_price = float(''.join(c for c in price_text if c.isdigit() or c =='.'))
-            #HEREEEE
+    books = soup.select("article.product_pod")
+    count = len(books)
 
-        next_button = soup.select_one("li.next a")
+    for book in books:
+        price_text = book.select_one(".price_color").text
+        clean_price = float(''.join(c for c in price_text if c.isdigit() or c == '.'))
+        price += clean_price
 
-        if next_button:
-            url = urljoin(url, next_button["href"])
-        else:
-            url = None
-
-    return count, price 
+    return count, price
 
 
 def scrape():
     genres = get_genres()
-
-    genre_counts = {}
     data = []
 
     for genre, link in genres.items():
         total, price = count_books_in_genre(link)
-        genre_counts[genre] = total
 
         data.append({
             'Genre': genre,
             'Number of Books': total,
-            'Price in Genre': price
-
+            'Price in Genre': round(price, 2)
         })
 
     df = pd.DataFrame(data)
-    summary_row = pd.DataFrame({
-        'Genre': ['Most popular'],
-        'Number of Books': [df['Number of Books'].max()],
-        'Price in Genre':['Price in Genre']
-    })
+
     df = df.sort_values('Number of Books', ascending=False)
-    df = pd.concat([df,summary_row],ignore_index=True)
+
+    most_popular = df.loc[df['Number of Books'].idxmax()]
+
+    summary_row = pd.DataFrame({
+        'Genre': [f"Most popular: {most_popular['Genre']}"],
+        'Number of Books': [most_popular['Number of Books']],
+        'Price in Genre': [most_popular['Price in Genre']]
+    })
+
+    df = pd.concat([df, summary_row], ignore_index=True)
+
     print("Writing to file...")
+
     df.to_excel(
         '/Users/macbookie/Desktop/output_data.xlsx',
-        header=['Genre', 'Number of Books','Total price made in Genre'],
         index=False,
         sheet_name='BookPopularity'
     )
+
     print("Done :)\n")
-
-
-
 
 
 if __name__ == "__main__":

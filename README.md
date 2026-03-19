@@ -5,7 +5,7 @@ A simple web scraper built to scrape "https://books.toscrape.com/" and output th
 ---
 
 ## Expected Output
-
+![Expected Results](results.png)
 
 
 ---
@@ -21,9 +21,10 @@ A simple web scraper built to scrape "https://books.toscrape.com/" and output th
 
 ```
 bookstore_scrape/
-│── main.py          # Helper functions
+│── main.py          
 |── output_data.xlsx
 |── requirements.txt
+|── results.png
 ```
 
 ---
@@ -57,16 +58,6 @@ Run the script with python:
 
 ```bash
 python main.py
-```
-
-Example usage inside code:
-
-```python
-from scraper.scraper import scrape_page
-
-url = "https://books.toscrape.com/"
-data = scrape_page(url)
-print(data)
 ```
 
 ---
